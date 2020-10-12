@@ -1,0 +1,8 @@
+{
+    "service": {
+        "name": "postgres",
+        "port": 5432,
+        "tags": ["postgres", "database"],
+        "token": "_POSTGRES_CONSUL_TOKEN_"
+    }
+}

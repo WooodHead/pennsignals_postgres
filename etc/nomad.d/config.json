@@ -1,0 +1,10 @@
+{
+	"auths": {
+                "quay.io": {
+                        "auth": "${quay_auth}"
+                },
+                "docker.pkg.github.com/pennsignals/": {
+                        "auth": "${github_auth}"
+                }
+        }
+}

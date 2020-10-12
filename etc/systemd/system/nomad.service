@@ -1,0 +1,11 @@
+[Unit]
+Documentation=https://www.nomadproject.io/docs/index.html
+
+[Service]
+ExecStart=/usr/local/bin/nomad agent -config /etc/nomad.d/configuration.hcl
+ExecReload=/bin/kill -HUP $MAINPID\
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
