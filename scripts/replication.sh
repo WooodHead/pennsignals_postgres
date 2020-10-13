@@ -1,5 +1,5 @@
 #!/bin/bash
-IP=$(/sbin/ip -o -4 addr list eth0 | awk '{print $4}' | cut -d/ -f1)
+IP=$(/sbin/ip -o -4 addr list ens192 | awk '{print $4}' | cut -d/ -f1)
 CONSUL_HTTP_TOKEN=$(consul kv get service/consul/bootstrap-token)
 
 # Put the Session on on the first consul node
