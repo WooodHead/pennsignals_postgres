@@ -1,0 +1,23 @@
+name: publish
+
+on:
+  release:
+    types:
+    - published
+
+jobs:
+
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2.3.4
+
+    - name: publish
+      id: publish
+      uses: pennsignals/publish_docker-compose@v0.1.1
+      with:
+        docker_compose: 'docker-compose.build.yml'
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+

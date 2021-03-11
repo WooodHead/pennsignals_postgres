@@ -121,10 +121,12 @@ RUN if [ "$COMPRESS" = "true" ]; then \
         && /bin/busybox sh -c "find $save_dirs -type d -depth -exec rmdir -p {} \; 2> /dev/null"; \
     fi
 
-FROM scratch
+FROM scratch as timescaledb
 COPY --from=builder / /
 
 LABEL maintainer="Alexander Kukushkin <alexander.kukushkin@zalando.de>"
+# LABEL name="timescaledb-pg$PG_MAJOR"
+LABEL name="patroni"
 
 ARG PG_MAJOR
 ARG COMPRESS
