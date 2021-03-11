@@ -10,7 +10,6 @@ fi
 readonly PATRONI_SCOPE=${PATRONI_SCOPE:-batman}
 PATRONI_NAMESPACE=${PATRONI_NAMESPACE:-/service}
 readonly PATRONI_NAMESPACE=${PATRONI_NAMESPACE%/}
-readonly DOCKER_IP=$(hostname --ip-address)
 
 case "$1" in
     haproxy)
@@ -29,7 +28,7 @@ case "$1" in
         fi
         ;;
     etcd)
-        exec "$@" -advertise-client-urls http://$DOCKER_IP:2379
+        exec "$@" -advertise-client-urls http://$HOST_IP:2379
         ;;
     zookeeper)
         exec /usr/share/zookeeper/bin/zkServer.sh start-foreground
@@ -45,11 +44,11 @@ fi
 export PATRONI_SCOPE
 export PATRONI_NAMESPACE
 export PATRONI_NAME="${PATRONI_NAME:-$(hostname)}"
-export PATRONI_RESTAPI_CONNECT_ADDRESS="$DOCKER_IP:8008"
+export PATRONI_RESTAPI_CONNECT_ADDRESS="$HOST_IP:8008"
 export PATRONI_RESTAPI_LISTEN="0.0.0.0:8008"
 export PATRONI_admin_PASSWORD="${PATRONI_admin_PASSWORD:-admin}"
 export PATRONI_admin_OPTIONS="${PATRONI_admin_OPTIONS:-createdb, createrole}"
-export PATRONI_POSTGRESQL_CONNECT_ADDRESS="$DOCKER_IP:5432"
+export PATRONI_POSTGRESQL_CONNECT_ADDRESS="$HOST_IP:5432"
 export PATRONI_POSTGRESQL_LISTEN="0.0.0.0:5432"
 export PATRONI_POSTGRESQL_DATA_DIR="${PATRONI_POSTGRESQL_DATA_DIR:-$PGDATA}"
 export PATRONI_REPLICATION_USERNAME="${PATRONI_REPLICATION_USERNAME:-replicator}"
