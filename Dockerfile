@@ -125,6 +125,7 @@ FROM scratch
 COPY --from=builder / /
 
 LABEL maintainer="Alexander Kukushkin <alexander.kukushkin@zalando.de>"
+LABEL name="patroni"
 
 ARG PG_MAJOR
 ARG COMPRESS
