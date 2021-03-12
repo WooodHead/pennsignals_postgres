@@ -25,7 +25,7 @@ RUN set -ex \
     && apt-cache depends patroni | sed -n -e 's/.*Depends: \(python3-.\+\)$/\1/p' \
             | grep -Ev '^python3-(sphinx|etcd|consul|kazoo|kubernetes)' \
             | xargs apt-get install -y vim curl wget less jq locales haproxy sudo \
-                            python3-etcd python3-kazoo python3-pip busybox \
+                            python3-etcd python3-consul python3-kazoo python3-pip busybox \
                             net-tools iputils-ping --fix-missing \
     && pip3 install dumb-init \
 \
@@ -121,12 +121,10 @@ RUN if [ "$COMPRESS" = "true" ]; then \
         && /bin/busybox sh -c "find $save_dirs -type d -depth -exec rmdir -p {} \; 2> /dev/null"; \
     fi
 
-FROM scratch as timescaledb
+FROM scratch
 COPY --from=builder / /
 
 LABEL maintainer="Alexander Kukushkin <alexander.kukushkin@zalando.de>"
-# LABEL name="timescaledb-pg$PG_MAJOR"
-LABEL name="patroni"
 
 ARG PG_MAJOR
 ARG COMPRESS
@@ -164,4 +162,5 @@ RUN sed -i 's/env python/&3/' /patroni*.py \
 
 USER postgres
 
-ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]
+ENTRYPOINT [ "/patroni.py", "postgres0.yml" ]
+# ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]

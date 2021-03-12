@@ -7,7 +7,7 @@ networks:
 
 services:
     etcd1: &etcd
-        image: patroni
+        build: .
         networks: [ demo ]
         environment:
             ETCD_LISTEN_PEER_URLS: http://0.0.0.0:2380
@@ -32,7 +32,7 @@ services:
         command: etcd -name etcd3 -initial-advertise-peer-urls http://etcd3:2380
 
     haproxy:
-        image: patroni
+        build: .
         networks: [ demo ]
         env_file: docker/patroni.env
         hostname: haproxy
@@ -47,8 +47,7 @@ services:
             PATRONI_SCOPE: demo
 
     patroni1:
-        image: patroni
-        networks: [ demo ]
+        build: .
         env_file: docker/patroni.env
         hostname: patroni1
         container_name: demo-patroni1
@@ -57,7 +56,7 @@ services:
             PATRONI_NAME: patroni1
 
     patroni2:
-        image: patroni
+        build: .
         networks: [ demo ]
         env_file: docker/patroni.env
         hostname: patroni2

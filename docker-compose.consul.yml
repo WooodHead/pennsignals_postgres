@@ -1,0 +1,89 @@
+# docker compose file for running a 3-node PostgreSQL cluster
+# with 3-node etcd cluster as the DCS and one haproxy node
+version: "2"
+
+x-patroni-credentials: &patroni-credentials
+    # POSTGRES_PASSWORD: "password"
+
+    PATRONI_SCOPE: "demo"
+    PATRONI_CONSUL_HOST: "consul:8500"
+    PATRONI_CONSUL_SCHEME: "http"
+
+    # PGDATA: /alloc/data
+    # PATRONI_SCOPE: "test"
+    # PATRONI_NAMESPACE: "/service"
+    # PATRONI_NAME: "${PATRONI_NAME:-$(hostname)}"
+    # PATRONI_RESTAPI_CONNECT_ADDRESS: "$DOCKER_IP:8008"
+    # PATRONI_RESTAPI_LISTEN: "0.0.0.0:8008"
+    # PATRONI_admin_PASSWORD: "${PATRONI_admin_PASSWORD:-admin}"
+    # PATRONI_admin_OPTIONS: "${PATRONI_admin_OPTIONS:-createdb, createrole}"
+    # PATRONI_POSTGRESQL_CONNECT_ADDRESS: "$DOCKER_IP:5432"
+    # PATRONI_POSTGRESQL_LISTEN: "0.0.0.0:5432"
+    # PATRONI_POSTGRESQL_DATA_DIR: "${PATRONI_POSTGRESQL_DATA_DIR:-/alloc/data}"
+    # PATRONI_REPLICATION_USERNAME: "${PATRONI_REPLICATION_USERNAME:-replicator}"
+    # PATRONI_REPLICATION_PASSWORD: "${PATRONI_REPLICATION_PASSWORD:-replicate}"
+    # PATRONI_SUPERUSER_USERNAME: "${PATRONI_SUPERUSER_USERNAME:-postgres}"
+    # PATRONI_SUPERUSER_PASSWORD: "${PATRONI_SUPERUSER_PASSWORD:-postgres}"
+  
+
+networks:
+    demo:
+
+services:
+    # Consul
+    consul:
+      image: consul
+      networks: [ demo ]
+      container_name: consul
+      ports:
+        - '8500:8500'
+
+    # haproxy:
+    #     build: .
+    #     networks: [ demo ]
+    #     env_file: docker/patroni.env
+    #     hostname: haproxy
+    #     container_name: demo-haproxy
+    #     ports:
+    #         - "5000:5000"
+    #         - "5001:5001"
+    #     command: haproxy
+    #     environment: 
+    #         <<: *patroni-credentials
+
+
+    patroni1:
+        build: .
+        # image: patroni
+        # image: timescale/timescaledb-ha:pg12.6-ts2.1.0-p6
+        networks: [ demo ]
+        env_file: docker/patroni.env
+        hostname: patroni1
+        container_name: demo-patroni1
+        environment:
+            <<: *patroni-credentials
+            PATRONI_NAME: patroni1
+
+    patroni2:
+        build: .
+        # image: patroni
+        # image: timescale/timescaledb-ha:pg12.6-ts2.1.0-p6
+        networks: [ demo ]
+        env_file: docker/patroni.env
+        hostname: patroni2
+        container_name: demo-patroni2
+        environment:
+            <<: *patroni-credentials
+            PATRONI_NAME: patroni2
+
+    patroni3:
+        build: .
+        # image: patroni
+        # image: timescale/timescaledb-ha:pg12.6-ts2.1.0-p6
+        networks: [ demo ]
+        env_file: docker/patroni.env
+        hostname: patroni3
+        container_name: demo-patroni3
+        environment:
+            <<: *patroni-credentials
+            PATRONI_NAME: patroni3
