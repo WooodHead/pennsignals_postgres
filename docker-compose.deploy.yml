@@ -1,0 +1,72 @@
+version: "3.8"
+
+x-hashicorp-config: &hashicorp-config
+  CONSUL_ADDR: "${CONSUL_ADDR}"
+  NOMAD_ADDR: "${NOMAD_ADDR}"
+  VAULT_ADDR: "${VAULT_ADDR}"
+  VAULT_TOKEN: "${VAULT_TOKEN}"
+  DEPLOY_CONFIG: "${DEPLOY_CONFIG}"
+  VERSION: "${VERSION}"
+
+services:
+
+########## DEPLOYMENT TOOLS ##########
+
+  levant:
+    environment:
+      <<: *hashicorp-config
+    image: hashicorp/levant
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    command: "/bin/ash"
+    volumes:
+    - ./:/source
+    working_dir: /source
+
+  # render all nomad jobs and output them to ./nomad/
+  render:
+    environment:
+      <<: *hashicorp-config
+      DEPLOY: "FALSE"
+    image: docker.pkg.github.com/pennsignals/deploy_action/deploy_action.deploy:0.1.3
+    volumes:
+    - ./:/source
+    working_dir: /source
+
+  # render all nomad jobs and deploy them
+  deploy:
+    environment:
+      <<: *hashicorp-config
+    image: docker.pkg.github.com/pennsignals/deploy_action/deploy_action.deploy:0.1.3
+    volumes:
+    - ./:/source
+    working_dir: /source
+
+  # upload all config files to consul
+  config:
+    environment:
+      <<: *hashicorp-config
+    image: docker.pkg.github.com/pennsignals/consul_configs_submit_action/consul_configs_submit_action.consul:0.2.6
+    volumes:
+    - ./:/source/
+    working_dir: /source
+
+  # get secrets from vault
+  secrets_get:
+    command: 
+    - "--get"
+    environment:
+      <<: *hashicorp-config
+    image: docker.pkg.github.com/pennsignals/secrets/secret:1.1.0
+    volumes:
+    - ./:/source/
+
+  # put secrets to vault
+  secrets_put:
+    command: 
+    - "--put"
+    environment:
+      <<: *hashicorp-config
+    image: docker.pkg.github.com/pennsignals/secrets/secret:1.1.0
+    volumes:
+    - ./:/source/

@@ -1,0 +1,53 @@
+organization: pennsignals
+project: timescaledb
+deploy: staging
+
+count: "3"
+
+services:
+
+  patroni:
+
+    image:
+      name: pennsignals_postgres.patroni
+      registry: "docker.pkg.github.com/pennsignals/pennsignals_postgres"
+      tag: 0.0.3-rc.4
+
+    location: ./patroni
+
+    resources:
+      cpu: 512
+      memory: 256
+
+  csi:
+
+    image:
+      name: azuredisk-csi
+      registry: "mcr.microsoft.com/k8s/csi"
+      tag: v0.9.0
+
+    plugin:
+      id: azure-disk-minion
+      type: node
+      mount_dir:  /csi
+      
+
+    location: ./csi
+
+    resources:
+      cpu: 512
+      memory: 256
+
+template:
+
+  secrets:
+    engine: kv
+    location: ./secrets
+
+    regex:
+      secrets: '".*.yaml" -o -regex ".*.yml" -o -regex ".*.json"'
+      policy: .*.policy.hcl
+
+  configs:
+    location: ./local
+    regex: ^.*.(yaml|yml|conf|json)

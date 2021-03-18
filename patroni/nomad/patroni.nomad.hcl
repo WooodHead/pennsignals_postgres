@@ -1,43 +1,40 @@
+locals {
+  image   = "[[ .services.patroni.image.registry ]]/[[ .services.patroni.image.name ]]:[[ .services.patroni.image.tag ]]"
+  cpu     = "[[ .services.patroni.resources.cpu ]]"
+  memory  = "[[ .services.patroni.resources.memory ]]"
+}
+
 job "timescaledb" {
   datacenters = ["dc1"]
 
   meta {
-    NAMESPACE = "staging"
+    NAMESPACE = "[[ .deploy ]]"
+  }
+
+  # spread allocations evenly over all nodes
+  spread {
+    attribute = "${node.unique.name}"
+  }
+  
+  # auto scale to increase compute
+  scaling {
+    enabled = true
+    min = 3
+    max = 12
+    policy {
+    }
   }
 
   group "patroni" {
-    count = 1
-    constraint {
-      operator  = "distinct_hosts"
-      value     = "true"
+
+    [[ $count := .count | parseInt ]][[ range $i := loop $count ]]
+    volume "uphs_test_nomad_disk-[[ $i ]]" {
+      type      = "csi"
+      read_only = false
+      source    = "uphs_test_nomad_disk-[[ $i ]]"
     }
-    // constraint {
-    //   attribute = "${node.unique.name}"
-    //   value     = "minion-test000000"
-    // }
 
-    // volume "uphs_test_nomad_disk-0" {
-    //   type      = "csi"
-    //   read_only = false
-    //   source    = "uphs_test_nomad_disk-0"
-    // }
-
-    // volume "uphs_test_nomad_disk-1" {
-    //   type      = "csi"
-    //   read_only = false
-    //   source    = "uphs_test_nomad_disk-1"
-    // }
-
-    // volume "uphs_test_nomad_disk-2" {
-    //   type      = "csi"
-    //   read_only = false
-    //   source    = "uphs_test_nomad_disk-2"
-    // }
-
-    // update {
-    //   canary       = 3
-    //   max_parallel = 3
-    // }
+    [[ end ]]
 
     restart {
       mode = "delay"
@@ -47,18 +44,14 @@ job "timescaledb" {
       mode = "host"
       port "patroni_tcp" { static = 5432 }
       port "patroni_master" { static = 8008 }
-    }        
+    }
+    [[ $count := .count | parseInt ]][[ range $i := loop $count ]]
+    task "patroni_[[ $i ]]" {
 
-    task "patroni" {
-      //user = "root"
       driver = "docker"
 
-      locals {
-        node_number = substr("${node.unique.name}", 2, 5)
-      }
-
       env {
-        NODE_NUMBER = "${node.unique.name: -1}"
+        NODE_NUMBER = "[[ $i ]]"
         HOST_IP = "${attr.unique.network.ip-address}"
         PATRONI_SCOPE = "timescaledb"
         PATRONI_NAME = "${node.unique.name}"
@@ -82,11 +75,11 @@ job "timescaledb" {
         // PATRONI_CONSUL_REGISTER_SERVICE = "true"
       }
 
-      // volume_mount {
-      //   volume      = "uphs_test_nomad_disk-${NODE_NUMBER}"
-      //   destination = "/csi"
-      //   read_only   = false
-      // }
+      volume_mount {
+        volume      = "uphs_test_nomad_disk-[[ $i ]]"
+        destination = "/csi"
+        read_only   = false
+      }
 
       template {
           destination   = "${NOMAD_TASK_DIR}/.env"
@@ -96,20 +89,20 @@ PATRONI_CONSUL_HOST="{{ with service "consul" }}{{ with index . 0 }}{{ .Address 
 EOH
       }
       config {
-        image = "docker.pkg.github.com/pennsignals/pennsignals_postgres/pennsignals_postgres.patroni:0.0.3-rc.4"
+        image = "${local.image}"
         dns_servers = ["127.0.0.53", "${HOST_IP}"]
         ports = [ "patroni_tcp", "patroni_master" ]
       }
 
       resources {
-        cpu    = 300
-        memory = 512
+        cpu    = "${local.cpu}"
+        memory = "${local.memory}"
       }
 
       service {
-        name = "patroni"
+        name = "patroni-[[ $i ]]"
         port = "patroni_tcp"
-        tags = ["ui", "${NOMAD_META_NAMESPACE}"]
+        tags = ["ui", "${NOMAD_META_NAMESPACE}", "patroni"]
         check {
           name = "patroni TCP Check"
           type = "tcp"
@@ -125,9 +118,8 @@ EOH
           timeout = "150s"
         }
       }
-//  {'http': 'http://10.145.242.70:8008/master', 'interval': '5s', 'DeregisterCriticalServiceAfter': '150.0s'}, 'tags': ['master']}
-
     }
+    [[ end ]]
   }
 }
 

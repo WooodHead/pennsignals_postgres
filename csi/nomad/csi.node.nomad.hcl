@@ -1,19 +1,16 @@
-job "plugin-azure-disk-controller" {
+job "plugin-azure-disk-nodes" {
   datacenters = ["dc1"]
-  type = "service"
 
   vault {
     policies = ["csi"]
   }
 
-  group "controller" {
-    count = 1
+  # you can run node plugins as service jobs as well, but this ensures
+  # that all nodes in the DC have a copy.
+  type = "system"
 
-    # disable deployments
-    update {
-      max_parallel = 0
-    }
-    task "controller" {
+  group "nodes" {
+    task "node" {
       driver = "docker"
 
       template {
@@ -40,27 +37,32 @@ EOH
       }
 
       config {
-        image = "mcr.microsoft.com/k8s/csi/azuredisk-csi:v0.9.0"
+        image   = "[[ .services.csi.image.registry ]]/[[ .services.csi.image.name ]]:[[ .services.csi.image.tag ]]"
 
         volumes = [
           "local/azure.json:/etc/kubernetes/azure.json"
         ]
 
         args = [
+          "--nodeid=${node.unique.name}",
           "--endpoint=unix://csi/csi.sock",
           "--logtostderr",
-          "--v=5",
+          "-v=6",
         ]
+
+        # node plugins must run as privileged jobs because they
+        # mount disks to the host
+        privileged = true
       }
 
       csi_plugin {
-        id        = "azure-disk1"
-        type      = "controller"
-        mount_dir = "/csi"
+        id        = "[[ .services.csi.plugin.id ]]"
+        type      = "[[ .services.csi.plugin.type ]]"
+        mount_dir = "[[ .services.csi.plugin.mount_dir ]]"
       }
 
       resources {
-        memory = 256
+        memory  = "[[ .services.csi.resources.memory ]]"
       }
 
       # ensuring the plugin has time to shut down gracefully

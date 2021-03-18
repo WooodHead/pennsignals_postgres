@@ -57,3 +57,6 @@ docs/source/_templates/
 
 #VSCode IDE
 .vscode/
+
+#ENV VARS
+.env
