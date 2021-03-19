@@ -15,15 +15,6 @@ job "timescaledb" {
   spread {
     attribute = "${node.unique.name}"
   }
-  
-  # auto scale to increase compute
-  scaling {
-    enabled = true
-    min = 3
-    max = 12
-    policy {
-    }
-  }
 
   group "patroni" {
 
