@@ -18,7 +18,7 @@ job "timescaledb" {
 
   group "patroni" {
 
-    [[ $count := .count | parseInt ]][[ range $i := loop $count ]]
+    [[ $count := or (.COUNT) .services.patroni.count | parseInt ]][[ range $i := loop $count ]]
     volume "uphs_test_nomad_disk-[[ $i ]]" {
       type      = "csi"
       read_only = false
@@ -36,7 +36,7 @@ job "timescaledb" {
       port "patroni_tcp" { static = 5432 }
       port "patroni_master" { static = 8008 }
     }
-    [[ $count := .count | parseInt ]][[ range $i := loop $count ]]
+    [[ $count := or (.COUNT) .services.patroni.count | parseInt ]][[ range $i := loop $count ]]
     task "patroni_[[ $i ]]" {
 
       driver = "docker"

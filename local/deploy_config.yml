@@ -2,12 +2,11 @@ organization: pennsignals
 project: timescaledb
 deploy: staging
 
-count: "3"
-
 services:
 
   patroni:
-
+    count: "3"
+    
     image:
       name: pennsignals_postgres.patroni
       registry: "docker.pkg.github.com/pennsignals/pennsignals_postgres"
