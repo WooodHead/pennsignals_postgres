@@ -30,7 +30,7 @@ job "plugin-azure-disk-controller" {
 "location": "{{with secret "kv/data/azure/credentials"}}{{.Data.data.LOCATION}}{{end}}",
 "useInstanceMetadata": true,
 "vmType": "vmss",
-"primaryScaleSetName": "uphs_{{with secret "kv/data/azure/credentials"}}{{.Data.data.LOCATION}}{{end}}_minion_vmss"
+"primaryScaleSetName": "uphs_{{with secret "kv/data/azure/credentials"}}{{.Data.data.ENV}}{{end}}_minion_vmss"
 }
 EOH
       }
@@ -55,7 +55,7 @@ EOH
 
       csi_plugin {
         id        = "[[ .services.csi.plugin.id ]]"
-        type      = "[[ .services.csi.plugin.type ]]"
+        type      = "controller"
         mount_dir = "[[ .services.csi.plugin.mount_dir ]]"
       }
 

@@ -27,7 +27,6 @@ services:
 
     plugin:
       id: azure-disk-minion
-      type: node
       mount_dir:  /csi
       
 
