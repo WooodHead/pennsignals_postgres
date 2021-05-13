@@ -66,7 +66,7 @@ services:
             PATRONI_NAME: patroni2
 
     patroni3:
-        image: patroni
+        build: .
         networks: [ demo ]
         env_file: docker/patroni.env
         hostname: patroni3
