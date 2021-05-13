@@ -24,10 +24,10 @@ job "timescaledb" {
     labels   = ["patroni-${group.value}"]
 
     content {
-      volume "uphs_test_nomad_disk" {
+      volume "uphs_lastage_nomad_disk" {
         type      = "csi"
         read_only = false
-        source    = "uphs_test_nomad_disk-${group.value}"
+        source    = "uphs_lastage_nomad_disk-${group.value}"
       }
 
       network {
@@ -35,6 +35,32 @@ job "timescaledb" {
         port "patroni_tcp" { static = 5432 }
         port "patroni_master" { static = 8008 }
       }
+
+      // set the ownership to postgres
+      task "prep-disk" {
+        driver = "docker"
+        volume_mount {
+          volume      = "uphs_lastage_nomad_disk"
+          destination = "/csi/"
+          read_only   = false
+        }
+        config {
+          image        = "busybox:latest"
+          command      = "sh"
+          // args         = ["-c", "chmod -R 0755 /csi/ && chown -R 999:999 /csi/"]
+          args         = ["-c", "chown -R 999:999 /csi/"]
+        }
+        resources {
+          cpu    = 200
+          memory = 128
+        }
+
+        lifecycle {
+          hook    = "prestart"
+          sidecar = false
+        }
+      }
+
       task "patroni" {
         
         driver = "docker"
@@ -67,7 +93,7 @@ job "timescaledb" {
         
         // Mount volume
         volume_mount {
-          volume      = "uphs_test_nomad_disk"
+          volume      = "uphs_lastage_nomad_disk"
           destination = "/home/postgres/patroni"
           read_only   = false
         }
@@ -84,9 +110,17 @@ PATRONI_CONSUL_HOST="{{ with service "consul" }}{{ with index . 0 }}{{ .Address 
 TASK_ID={{ $task_id }}
 EOH
         }
+
+        template {
+            destination   = "/home/postgres/patroni/postgres0.yml"
+            data = <<EOH
+{{ key "service/timescaledb/patroni.yml" }}
+EOH
+        }
+
         config {
           image = "${local.image}"
-          dns_servers = ["127.0.0.53", "${HOST_IP}"]
+          dns_servers = ["${HOST_IP}"]
           ports = [ "patroni_tcp", "patroni_master" ]
         }
 
@@ -97,7 +131,7 @@ EOH
         service {
           name = "patroni"
           port = "patroni_tcp"
-          tags = ["ui", "${NOMAD_META_NAMESPACE}", "patroni"]
+          tags = ["tcp", "${NOMAD_META_NAMESPACE}", "postgres"]
           check {
             name = "patroni TCP Check"
             type = "tcp"
