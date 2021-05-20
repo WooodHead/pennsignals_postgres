@@ -1,0 +1,50 @@
+name: release
+
+on:
+  release:
+    types:
+    - published
+
+jobs:
+
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2.3.4
+
+    # build and publish docker images to repo
+    - name: publish
+      id: publish
+      uses: pennsignals/publish_docker-compose@v0.1.1
+      with:
+        docker_compose: 'docker-compose.build.yml'
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+
+    - name: render
+      uses: pennsignals/deploy_action@v0.1.3
+      with:
+        version: "${{ steps.publish.outputs.tag }}"
+        config: './local/deploy_config.yml'
+        nomad_addr: "${{ secrets.STAGING_NOMAD_ADDR }}"
+        deploy: "FALSE"
+
+    - name: tar
+      run: tar -czvf nomad.tar.gz nomad/
+
+    # Upload rendered nomad jobs as artifacts
+    - name: upload
+      uses: actions/upload-artifact@v2
+      with:
+        name: nomad
+        path: nomad.tar.gz
+
+    # add artifacts to release
+    - name: release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: nomad.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
